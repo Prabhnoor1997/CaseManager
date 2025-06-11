@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { Fragment } from 'react';
-import { Menu, Transition } from '@headlessui/react';
-import { useSession, signOut } from 'next-auth/react';
-import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { Fragment } from "react";
+import { Menu, Transition } from "@headlessui/react";
+import { useSession, signOut } from "next-auth/react";
+import { MagnifyingGlassIcon, BellIcon } from "@heroicons/react/24/outline";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
 
 function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ");
 }
 
 export default function TopNav() {
   const { data: session } = useSession();
 
   return (
-    <div className="flex h-16 items-center justify-between px-4 bg-white shadow-sm">
+    <div className="flex flex-1 items-center justify-between">
       <div className="flex flex-1">
         <div className="flex w-full md:ml-0">
           <div className="relative w-full text-gray-400 focus-within:text-gray-600">
@@ -23,7 +23,7 @@ export default function TopNav() {
             </div>
             <input
               type="search"
-              className="block h-full w-full border-transparent py-2 pl-10 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm"
+              className="block h-full w-full border-transparent py-2 pl-10 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm bg-gray-50 rounded-md"
               placeholder="Search..."
             />
           </div>
@@ -32,19 +32,26 @@ export default function TopNav() {
       <div className="ml-4 flex items-center space-x-4">
         <button
           type="button"
-          className="rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none"
+          className="rounded-full p-1 text-gray-400 hover:text-gray-500 focus:outline-none"
         >
           <span className="sr-only">View notifications</span>
           <BellIcon className="h-6 w-6" aria-hidden="true" />
         </button>
 
         <Menu as="div" className="relative">
-          <Menu.Button className="flex items-center space-x-3 rounded-full bg-white text-sm focus:outline-none">
+          <Menu.Button className="flex items-center space-x-3 rounded-full text-sm focus:outline-none">
             <span className="sr-only">Open user menu</span>
-            <UserCircleIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />
+            <UserCircleIcon
+              className="h-8 w-8 text-gray-400"
+              aria-hidden="true"
+            />
             <div className="hidden md:flex md:items-center md:space-x-2">
-              <span className="text-sm font-medium text-gray-700">{session?.user?.name || session?.user?.email}</span>
-              <span className="text-xs text-gray-500">{session?.user?.role}</span>
+              <span className="text-sm font-medium text-gray-700">
+                {session?.user?.name || session?.user?.email}
+              </span>
+              <span className="text-xs text-gray-500">
+                {session?.user?.role}
+              </span>
             </div>
           </Menu.Button>
           <Transition
@@ -62,8 +69,8 @@ export default function TopNav() {
                   <a
                     href="/profile"
                     className={classNames(
-                      active ? 'bg-gray-100' : '',
-                      'block px-4 py-2 text-sm text-gray-700'
+                      active ? "bg-gray-100" : "",
+                      "block px-4 py-2 text-sm text-gray-700"
                     )}
                   >
                     Your Profile
@@ -75,8 +82,8 @@ export default function TopNav() {
                   <a
                     href="/settings"
                     className={classNames(
-                      active ? 'bg-gray-100' : '',
-                      'block px-4 py-2 text-sm text-gray-700'
+                      active ? "bg-gray-100" : "",
+                      "block px-4 py-2 text-sm text-gray-700"
                     )}
                   >
                     Settings
@@ -88,8 +95,8 @@ export default function TopNav() {
                   <button
                     onClick={() => signOut()}
                     className={classNames(
-                      active ? 'bg-gray-100' : '',
-                      'block w-full px-4 py-2 text-left text-sm text-gray-700'
+                      active ? "bg-gray-100" : "",
+                      "block w-full px-4 py-2 text-left text-sm text-gray-700"
                     )}
                   >
                     Sign out
@@ -102,4 +109,4 @@ export default function TopNav() {
       </div>
     </div>
   );
-} 
+}
