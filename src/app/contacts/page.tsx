@@ -32,8 +32,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Phone,
-  Mail,
   Building,
   User,
   Settings,
@@ -42,6 +40,7 @@ import {
   Download,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import TagManagementModal from "@/components/contacts/TagManagementModal";
 
 interface Contact {
   _id: string;
@@ -71,15 +70,148 @@ interface Contact {
   };
 }
 
-interface ContactsResponse {
-  contacts: Contact[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
+// Mock data for demonstration
+const mockContacts: Contact[] = [
+  {
+    _id: "1",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@example.com",
+    phone: "+1 (555) 123-4567",
+    type: "individual",
+    status: "active",
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z",
+    address: {
+      street: "123 Main St",
+      city: "New York",
+      state: "NY",
+      zipCode: "10001",
+      country: "USA",
+    },
+    company: {
+      name: "Tech Corp",
+      position: "Senior Developer",
+    },
+    customFields: {
+      tags: ["VIP", "Developer", "Remote"],
+    },
+  },
+  {
+    _id: "2",
+    firstName: "Jane",
+    lastName: "Smith",
+    email: "jane.smith@marketing.com",
+    phone: "+1 (555) 987-6543",
+    type: "individual",
+    status: "active",
+    createdAt: "2024-01-16T14:30:00Z",
+    updatedAt: "2024-01-16T14:30:00Z",
+    address: {
+      street: "456 Oak Ave",
+      city: "Los Angeles",
+      state: "CA",
+      zipCode: "90210",
+      country: "USA",
+    },
+    company: {
+      name: "Marketing Plus",
+      position: "Marketing Director",
+    },
+    customFields: {
+      tags: ["Marketing", "VIP", "Consultant"],
+    },
+  },
+  {
+    _id: "3",
+    firstName: "Bob",
+    lastName: "Johnson",
+    email: "bob@designstudio.com",
+    phone: "+1 (555) 456-7890",
+    type: "individual",
+    status: "prospect",
+    createdAt: "2024-01-17T09:15:00Z",
+    updatedAt: "2024-01-17T09:15:00Z",
+    address: {
+      street: "789 Pine St",
+      city: "San Francisco",
+      state: "CA",
+      zipCode: "94102",
+      country: "USA",
+    },
+    company: {
+      name: "Design Studio",
+      position: "Creative Director",
+    },
+    customFields: {
+      tags: ["Designer", "Freelancer", "Creative"],
+    },
+  },
+  {
+    _id: "4",
+    firstName: "Alice",
+    lastName: "Williams",
+    email: "alice.williams@lawfirm.com",
+    phone: "+1 (555) 321-9876",
+    type: "individual",
+    status: "active",
+    createdAt: "2024-01-18T11:45:00Z",
+    updatedAt: "2024-01-18T11:45:00Z",
+    address: {
+      street: "321 Legal Blvd",
+      city: "Chicago",
+      state: "IL",
+      zipCode: "60601",
+      country: "USA",
+    },
+    company: {
+      name: "Williams & Associates",
+      position: "Partner",
+    },
+    customFields: {
+      tags: ["Legal", "VIP", "Partner"],
+    },
+  },
+  {
+    _id: "5",
+    firstName: "Mike",
+    lastName: "Chen",
+    email: "mike.chen@startup.io",
+    phone: "+1 (555) 654-3210",
+    type: "individual",
+    status: "active",
+    createdAt: "2024-01-19T16:20:00Z",
+    updatedAt: "2024-01-19T16:20:00Z",
+    address: {
+      street: "567 Innovation Dr",
+      city: "Austin",
+      state: "TX",
+      zipCode: "73301",
+      country: "USA",
+    },
+    company: {
+      name: "StartupXYZ",
+      position: "CTO",
+    },
+    customFields: {
+      tags: ["Startup", "Technology", "Executive"],
+    },
+  },
+  {
+    _id: "6",
+    firstName: "Sarah",
+    lastName: "Davis",
+    email: "sarah@freelance.com",
+    phone: "+1 (555) 789-0123",
+    type: "individual",
+    status: "prospect",
+    createdAt: "2024-01-20T13:10:00Z",
+    updatedAt: "2024-01-20T13:10:00Z",
+    customFields: {
+      tags: ["Freelancer", "Writer", "Remote"],
+    },
+  },
+];
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -99,29 +231,86 @@ export default function ContactsPage() {
     pages: 0,
   });
 
-  // Fetch contacts
+  // Filter states
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [appliedTags, setAppliedTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [tagSearchTerm, setTagSearchTerm] = useState("");
+
+  // Modal states
+  const [isTagManagementModalOpen, setIsTagManagementModalOpen] =
+    useState(false);
+
+  // Extract available tags from contacts
+  const extractAvailableTags = (contacts: Contact[]) => {
+    const tagSet = new Set<string>();
+    contacts.forEach((contact) => {
+      contact.customFields?.tags?.forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  };
+
+  // Filter contacts by applied tags
+  const filterContactsByTags = (contacts: Contact[]) => {
+    if (appliedTags.length === 0) return contacts;
+    return contacts.filter((contact) =>
+      appliedTags.some((tag) => contact.customFields?.tags?.includes(tag))
+    );
+  };
+
+  // Fetch contacts (using mock data for demo)
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "10",
-      });
 
-      if (searchTerm) params.append("search", searchTerm);
-      if (activeTab === "people") params.append("type", "individual");
-      if (activeTab === "companies")
-        params.append("type", "business,organization");
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const response = await fetch(`/api/contacts?${params.toString()}`);
+      let filteredData = [...mockContacts];
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch contacts");
+      // Apply tab filtering
+      if (activeTab === "people") {
+        filteredData = filteredData.filter(
+          (contact) => contact.type === "individual"
+        );
+      } else if (activeTab === "companies") {
+        filteredData = filteredData.filter(
+          (contact) =>
+            contact.type === "business" || contact.type === "organization"
+        );
       }
 
-      const data: ContactsResponse = await response.json();
-      setContacts(data.contacts);
-      setPagination(data.pagination);
+      // Apply search filtering
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredData = filteredData.filter(
+          (contact) =>
+            contact.firstName.toLowerCase().includes(searchLower) ||
+            contact.lastName.toLowerCase().includes(searchLower) ||
+            contact.email.toLowerCase().includes(searchLower) ||
+            contact.phone.includes(searchTerm) ||
+            contact.company?.name.toLowerCase().includes(searchLower) ||
+            contact.customFields?.tags?.some((tag) =>
+              tag.toLowerCase().includes(searchLower)
+            )
+        );
+      }
+
+      // Extract available tags from all contacts (before tag filtering)
+      const allTags = extractAvailableTags(mockContacts);
+      setAvailableTags(allTags);
+
+      // Apply tag filtering on the client side
+      const finalFilteredContacts = filterContactsByTags(filteredData);
+      setContacts(finalFilteredContacts);
+
+      // Mock pagination
+      setPagination({
+        page: currentPage,
+        limit: 10,
+        total: finalFilteredContacts.length,
+        pages: Math.ceil(finalFilteredContacts.length / 10),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -131,7 +320,7 @@ export default function ContactsPage() {
 
   useEffect(() => {
     fetchContacts();
-  }, [currentPage, activeTab]);
+  }, [currentPage, activeTab, appliedTags]);
 
   // Handle search with debouncing
   useEffect(() => {
@@ -189,6 +378,60 @@ export default function ContactsPage() {
     return `${address.street}, ${address.city}, ${address.state} ${address.zipCode}`;
   };
 
+  // Filter available tags based on search term
+  const filteredAvailableTags = availableTags.filter((tag) =>
+    tag.toLowerCase().includes(tagSearchTerm.toLowerCase())
+  );
+
+  // Filter handlers
+  const handleTagSelect = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedTags(selectedTags);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedTags([]);
+    setAppliedTags([]);
+    setCurrentPage(1);
+    setTagSearchTerm("");
+  };
+
+  const handleSelectAllFilteredTags = () => {
+    const newSelectedTags = [
+      ...new Set([...selectedTags, ...filteredAvailableTags]),
+    ];
+    setSelectedTags(newSelectedTags);
+  };
+
+  const handleDeselectAllFilteredTags = () => {
+    const newSelectedTags = selectedTags.filter(
+      (tag) => !filteredAvailableTags.includes(tag)
+    );
+    setSelectedTags(newSelectedTags);
+  };
+
+  // Tag management handlers
+  const handleTagsUpdate = (updatedTags: string[]) => {
+    setAvailableTags(updatedTags);
+    // Remove any selected/applied tags that no longer exist
+    setSelectedTags((prev) => prev.filter((tag) => updatedTags.includes(tag)));
+    setAppliedTags((prev) => prev.filter((tag) => updatedTags.includes(tag)));
+  };
+
+  const handleOpenTagManagement = () => {
+    setIsTagManagementModalOpen(true);
+  };
+
+  const handleCloseTagManagement = () => {
+    setIsTagManagementModalOpen(false);
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -199,9 +442,7 @@ export default function ContactsPage() {
             <Button
               variant="outline"
               className="flex items-center gap-2"
-              onClick={() => {
-                /* Handle manage tags */
-              }}
+              onClick={handleOpenTagManagement}
             >
               <Settings className="h-4 w-4" />
               Manage tags
@@ -272,19 +513,129 @@ export default function ContactsPage() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">Columns</Button>
+                  <Button variant="outline">
+                    Filters
+                    {appliedTags.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {appliedTags.length}
+                      </Badge>
+                    )}
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Show/Hide Columns</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">Filters</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Status Filters</DropdownMenuItem>
-                  <DropdownMenuItem>Type Filters</DropdownMenuItem>
+                <DropdownMenuContent className="w-80">
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <h4 className="font-medium text-sm mb-3">Contact Tags</h4>
+
+                      {/* Search input for tags */}
+                      <div className="relative mb-3">
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                        <Input
+                          placeholder="Search tags..."
+                          value={tagSearchTerm}
+                          onChange={(e) => setTagSearchTerm(e.target.value)}
+                          className="pl-7 h-8 text-sm"
+                        />
+                      </div>
+
+                      {/* Select All / Deselect All buttons */}
+                      {filteredAvailableTags.length > 0 && (
+                        <div className="flex gap-2 mb-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleSelectAllFilteredTags}
+                            className="h-6 px-2 text-xs"
+                            disabled={filteredAvailableTags.every((tag) =>
+                              selectedTags.includes(tag)
+                            )}
+                          >
+                            Select All
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleDeselectAllFilteredTags}
+                            className="h-6 px-2 text-xs"
+                            disabled={
+                              !filteredAvailableTags.some((tag) =>
+                                selectedTags.includes(tag)
+                              )
+                            }
+                          >
+                            Deselect All
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Tags list */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {filteredAvailableTags.length > 0 ? (
+                          filteredAvailableTags.map((tag) => (
+                            <div
+                              key={tag}
+                              className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded"
+                            >
+                              <Checkbox
+                                checked={selectedTags.includes(tag)}
+                                onCheckedChange={() => handleTagSelect(tag)}
+                              />
+                              <label
+                                className="text-sm font-normal cursor-pointer flex-1"
+                                onClick={() => handleTagSelect(tag)}
+                              >
+                                {tag}
+                              </label>
+                            </div>
+                          ))
+                        ) : tagSearchTerm ? (
+                          <p className="text-sm text-gray-500">
+                            No tags found matching &ldquo;{tagSearchTerm}&rdquo;
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No tags available
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Show selected tags count if any */}
+                      {selectedTags.length > 0 && (
+                        <div className="pt-2 mt-2 border-t border-gray-100">
+                          <p className="text-xs text-gray-600">
+                            {selectedTags.length} tag
+                            {selectedTags.length !== 1 ? "s" : ""} selected
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <DropdownMenuSeparator />
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleApplyFilters}
+                        className="flex-1"
+                        size="sm"
+                        disabled={
+                          selectedTags.length === 0 && appliedTags.length === 0
+                        }
+                      >
+                        Apply Filters
+                      </Button>
+                      <Button
+                        onClick={handleClearFilters}
+                        variant="outline"
+                        className="flex-1"
+                        size="sm"
+                        disabled={
+                          selectedTags.length === 0 && appliedTags.length === 0
+                        }
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -312,11 +663,27 @@ export default function ContactsPage() {
                 <User className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No contacts found.
+                {appliedTags.length > 0 || searchTerm
+                  ? "No matching contacts found."
+                  : "No contacts found."}
               </h3>
               <p className="text-gray-500">
-                Track every detail about all of your clients and contacts.
+                {appliedTags.length > 0 || searchTerm
+                  ? "Try adjusting your filters or search criteria."
+                  : "Track every detail about all of your clients and contacts."}
               </p>
+              {(appliedTags.length > 0 || searchTerm) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleClearFilters();
+                    setSearchTerm("");
+                  }}
+                  className="mt-4"
+                >
+                  Clear all filters
+                </Button>
+              )}
             </div>
             <div className="flex items-center justify-center gap-3">
               <Button
@@ -471,23 +838,6 @@ export default function ContactsPage() {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() =>
-                                  window.open(`mailto:${contact.email}`)
-                                }
-                              >
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  window.open(`tel:${contact.phone}`)
-                                }
-                              >
-                                <Phone className="mr-2 h-4 w-4" />
-                                Call
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
                                 onClick={() => handleDeleteContact(contact._id)}
                                 className="text-red-600"
                               >
@@ -513,18 +863,16 @@ export default function ContactsPage() {
                 <Button variant="ghost" size="sm" disabled>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-gray-600">No results found</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <div className="w-4 h-4 border border-gray-300 rounded"></div>
-                  </Button>
-                  <span className="text-sm text-gray-600">Expand rows</span>
-                </div>
+                <span className="text-sm text-gray-600">
+                  Showing {contacts.length} contact
+                  {contacts.length !== 1 ? "s" : ""}
+                </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                disabled
               >
                 <Download className="h-4 w-4" />
                 Export
@@ -533,6 +881,15 @@ export default function ContactsPage() {
           </>
         )}
       </div>
+
+      {/* Tag Management Modal */}
+      <TagManagementModal
+        isOpen={isTagManagementModalOpen}
+        onClose={handleCloseTagManagement}
+        allTags={availableTags}
+        onTagsUpdate={handleTagsUpdate}
+        mode="full-management"
+      />
     </AppLayout>
   );
 }
