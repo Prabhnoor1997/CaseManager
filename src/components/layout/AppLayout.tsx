@@ -1,23 +1,15 @@
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
-import Sidebar from './Sidebar';
-import TopNav from './TopNav';
+import { useSession } from "next-auth/react";
+import { AppSidebar } from "./AppSidebar";
+import TopNav from "./TopNav";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { status } = useSession();
 
-  useEffect(() => {
-    if (status === 'unauthenticated' && pathname !== '/login') {
-      router.replace('/login');
-    }
-  }, [status, router, pathname]);
-
-  if (status === 'loading') {
+  // Show loading state while session is being fetched
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -25,21 +17,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (status === 'unauthenticated') {
-    return null;
-  }
+  // Middleware handles authentication, so we can trust that user is authenticated here
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TopNav />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
-            {children}
-          </main>
-        </div>
-      </div>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center justify-between w-full px-16">
+            <TopNav />
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
-} 
+}
