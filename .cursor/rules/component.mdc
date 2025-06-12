@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Keep the components as modular as possible.
+- Don't make the components longer than 300 lines.

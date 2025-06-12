@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -32,10 +24,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Search,
-  Filter,
   MoreHorizontal,
   Eye,
   Edit,
@@ -44,6 +36,10 @@ import {
   Mail,
   Building,
   User,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Download,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
@@ -54,6 +50,13 @@ interface Contact {
   email: string;
   phone: string;
   mobile?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
   company?: {
     name: string;
     position: string;
@@ -64,6 +67,7 @@ interface Contact {
   updatedAt: string;
   customFields?: {
     profilePhoto?: string;
+    tags?: string[];
   };
 }
 
@@ -79,17 +83,16 @@ interface ContactsResponse {
 
 export default function ContactsPage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
+  const [, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
@@ -106,8 +109,9 @@ export default function ContactsPage() {
       });
 
       if (searchTerm) params.append("search", searchTerm);
-      if (statusFilter) params.append("status", statusFilter);
-      if (typeFilter) params.append("type", typeFilter);
+      if (activeTab === "people") params.append("type", "individual");
+      if (activeTab === "companies")
+        params.append("type", "business,organization");
 
       const response = await fetch(`/api/contacts?${params.toString()}`);
 
@@ -126,15 +130,13 @@ export default function ContactsPage() {
   };
 
   useEffect(() => {
-    if (session) {
-      fetchContacts();
-    }
-  }, [session, currentPage, searchTerm, statusFilter, typeFilter]);
+    fetchContacts();
+  }, [currentPage, activeTab]);
 
   // Handle search with debouncing
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page when searching
+      setCurrentPage(1);
       fetchContacts();
     }, 500);
 
@@ -155,198 +157,230 @@ export default function ContactsPage() {
         throw new Error("Failed to delete contact");
       }
 
-      // Refresh the contacts list
       fetchContacts();
+      setSelectedContacts(selectedContacts.filter((id) => id !== contactId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete contact");
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<
-      string,
-      "default" | "secondary" | "destructive" | "outline"
-    > = {
-      active: "default",
-      inactive: "secondary",
-      prospect: "outline",
-    };
-
-    return (
-      <Badge variant={variants[status] || "default"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+  const handleSelectContact = (contactId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedContacts([...selectedContacts, contactId]);
+    } else {
+      setSelectedContacts(selectedContacts.filter((id) => id !== contactId));
+    }
   };
 
-  const getTypeBadge = (type: string) => {
-    const icons = {
-      individual: <User className="h-3 w-3" />,
-      business: <Building className="h-3 w-3" />,
-      organization: <Building className="h-3 w-3" />,
-    };
-
-    return (
-      <div className="flex items-center gap-1">
-        {icons[type as keyof typeof icons]}
-        <span className="text-sm">
-          {type.charAt(0).toUpperCase() + type.slice(1)}
-        </span>
-      </div>
-    );
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedContacts(contacts.map((contact) => contact._id));
+    } else {
+      setSelectedContacts([]);
+    }
   };
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
-  if (!session) {
-    return <div>Please sign in to view contacts.</div>;
-  }
+  const formatAddress = (address?: Contact["address"]) => {
+    if (!address) return "";
+    return `${address.street}, ${address.city}, ${address.state} ${address.zipCode}`;
+  };
 
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Contacts</h1>
-            <p className="text-muted-foreground">
-              Manage your case management clients and contacts
-            </p>
+          <h1 className="text-2xl font-semibold">Contacts</h1>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => {
+                /* Handle manage tags */
+              }}
+            >
+              <Settings className="h-4 w-4" />
+              Manage tags
+            </Button>
+            <Button
+              onClick={() => router.push("/contacts/new?type=person")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New person
+            </Button>
+            <Button
+              onClick={() => router.push("/contacts/new?type=company")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New company
+            </Button>
           </div>
-          <Button
-            onClick={() => router.push("/contacts/new")}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Contact
-          </Button>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters & Search
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label>Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search contacts..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="prospect">Prospect</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Type</Label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
-                    <SelectItem value="individual">Individual</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="organization">Organization</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("");
-                    setTypeFilter("");
-                    setCurrentPage(1);
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              </div>
+        {/* Tabs and Search */}
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === "all"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setActiveTab("people")}
+                className={`flex items-center gap-2 text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === "people"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <User className="h-4 w-4" />
+                People
+              </button>
+              <button
+                onClick={() => setActiveTab("companies")}
+                className={`flex items-center gap-2 text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === "companies"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Building className="h-4 w-4" />
+                Companies
+              </button>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Filter by keyword"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Columns</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Show/Hide Columns</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Filters</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Status Filters</DropdownMenuItem>
+                  <DropdownMenuItem>Type Filters</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
 
         {/* Error Message */}
         {error && (
-          <Card className="mb-6 border-destructive">
+          <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
+              <p className="text-red-600">{error}</p>
             </CardContent>
           </Card>
         )}
 
-        {/* Contacts Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Contacts ({pagination.total})</CardTitle>
+        {/* Main Content */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : contacts.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="mb-6">
+              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <User className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No contacts found.
+              </h3>
+              <p className="text-gray-500">
+                Track every detail about all of your clients and contacts.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : contacts.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No contacts found.</p>
-                <Button
-                  onClick={() => router.push("/contacts/new")}
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Create your first contact
-                </Button>
-              </div>
-            ) : (
-              <>
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                onClick={() => router.push("/contacts/new?type=person")}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New person
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/contacts/new?type=company")}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New company
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Table */}
+            <Card>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Type</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={
+                            selectedContacts.length === contacts.length &&
+                            contacts.length > 0
+                          }
+                          onCheckedChange={(checked: boolean) =>
+                            handleSelectAll(checked)
+                          }
+                        />
+                      </TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Tags</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {contacts.map((contact) => (
-                      <TableRow key={contact._id}>
+                      <TableRow key={contact._id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedContacts.includes(contact._id)}
+                            onCheckedChange={(checked: boolean) =>
+                              handleSelectContact(contact._id, checked)
+                            }
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar>
+                            <Avatar className="h-8 w-8">
                               <AvatarImage
                                 src={contact.customFields?.profilePhoto}
                               />
-                              <AvatarFallback>
+                              <AvatarFallback className="text-xs">
                                 {getInitials(
                                   contact.firstName,
                                   contact.lastName
@@ -354,11 +388,11 @@ export default function ContactsPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">
+                              <div className="font-medium text-sm">
                                 {contact.firstName} {contact.lastName}
                               </div>
                               {contact.company?.name && (
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-xs text-gray-500">
                                   {contact.company.position} at{" "}
                                   {contact.company.name}
                                 </div>
@@ -366,34 +400,54 @@ export default function ContactsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{getTypeBadge(contact.type)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {contact.customFields?.tags?.map((tag, index) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {tag}
+                              </Badge>
+                            )) || (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <a
                             href={`mailto:${contact.email}`}
-                            className="text-blue-600 hover:underline"
+                            className="text-blue-600 hover:underline text-sm"
                           >
                             {contact.email}
                           </a>
                         </TableCell>
                         <TableCell>
-                          {contact.phone && (
+                          {contact.phone ? (
                             <a
                               href={`tel:${contact.phone}`}
-                              className="text-blue-600 hover:underline"
+                              className="text-blue-600 hover:underline text-sm"
                             >
                               {contact.phone}
                             </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
                           )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(contact.status)}</TableCell>
                         <TableCell>
-                          {new Date(contact.createdAt).toLocaleDateString()}
+                          <span className="text-sm text-gray-600">
+                            {formatAddress(contact.address) || "-"}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -447,65 +501,37 @@ export default function ContactsPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
 
-                {/* Pagination */}
-                {pagination.pages > 1 && (
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {(currentPage - 1) * pagination.limit + 1} to{" "}
-                      {Math.min(
-                        currentPage * pagination.limit,
-                        pagination.total
-                      )}{" "}
-                      of {pagination.total} contacts
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          setCurrentPage(Math.max(1, currentPage - 1))
-                        }
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <div className="flex gap-1">
-                        {Array.from({
-                          length: Math.min(5, pagination.pages),
-                        }).map((_, i) => {
-                          const pageNum = i + 1;
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={
-                                currentPage === pageNum ? "default" : "outline"
-                              }
-                              onClick={() => setCurrentPage(pageNum)}
-                              className="w-10"
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          setCurrentPage(
-                            Math.min(pagination.pages, currentPage + 1)
-                          )
-                        }
-                        disabled={currentPage === pagination.pages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+            {/* Footer */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="sm" disabled>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" disabled>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-gray-600">No results found</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm">
+                    <div className="w-4 h-4 border border-gray-300 rounded"></div>
+                  </Button>
+                  <span className="text-sm text-gray-600">Expand rows</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );
