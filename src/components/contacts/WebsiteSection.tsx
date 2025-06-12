@@ -28,6 +28,7 @@ interface WebsiteSectionProps {
     field: keyof WebsiteEntry,
     value: string | boolean
   ) => void;
+  disabled?: boolean;
 }
 
 export default function WebsiteSection({
@@ -35,6 +36,7 @@ export default function WebsiteSection({
   onAddWebsite,
   onRemoveWebsite,
   onUpdateWebsite,
+  disabled = false,
 }: WebsiteSectionProps) {
   return (
     <Card>
@@ -52,6 +54,7 @@ export default function WebsiteSection({
                 placeholder=""
                 type="url"
                 className="h-10"
+                disabled={disabled}
               />
             </div>
             <div className="w-24 space-y-2">
@@ -59,6 +62,7 @@ export default function WebsiteSection({
               <Select
                 value={website.type}
                 onValueChange={(value) => onUpdateWebsite(index, "type", value)}
+                disabled={disabled}
               >
                 <SelectTrigger className="mb-0" style={{ height: "40px" }}>
                   <SelectValue />
@@ -79,32 +83,37 @@ export default function WebsiteSection({
                   checked={website.primary}
                   onChange={() => onUpdateWebsite(index, "primary", true)}
                   className="h-3 w-3"
+                  disabled={disabled}
                 />
                 <Label htmlFor={`website-primary-${index}`} className="text-sm">
                   Primary
                 </Label>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemoveWebsite(index)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {!disabled && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemoveWebsite(index)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
-        <Button
-          type="button"
-          variant="link"
-          onClick={onAddWebsite}
-          className="flex items-center gap-2 text-blue-600 h-auto p-0"
-        >
-          <Plus className="h-4 w-4" />
-          Add website
-        </Button>
+        {!disabled && (
+          <Button
+            type="button"
+            variant="link"
+            onClick={onAddWebsite}
+            className="flex items-center gap-2 text-blue-600 h-auto p-0"
+          >
+            <Plus className="h-4 w-4" />
+            Add website
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

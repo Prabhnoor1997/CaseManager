@@ -28,6 +28,7 @@ interface PhoneSectionProps {
     field: keyof PhoneEntry,
     value: string | boolean
   ) => void;
+  disabled?: boolean;
 }
 
 export default function PhoneSection({
@@ -35,6 +36,7 @@ export default function PhoneSection({
   onAddPhone,
   onRemovePhone,
   onUpdatePhone,
+  disabled = false,
 }: PhoneSectionProps) {
   return (
     <Card>
@@ -52,6 +54,7 @@ export default function PhoneSection({
                 placeholder=""
                 type="tel"
                 className="h-10"
+                disabled={disabled}
               />
             </div>
             <div className="w-24 space-y-2">
@@ -59,6 +62,7 @@ export default function PhoneSection({
               <Select
                 value={phone.type}
                 onValueChange={(value) => onUpdatePhone(index, "type", value)}
+                disabled={disabled}
               >
                 <SelectTrigger className="mb-0" style={{ height: "40px" }}>
                   <SelectValue />
@@ -80,32 +84,37 @@ export default function PhoneSection({
                   checked={phone.primary}
                   onChange={() => onUpdatePhone(index, "primary", true)}
                   className="h-3 w-3"
+                  disabled={disabled}
                 />
                 <Label htmlFor={`phone-primary-${index}`} className="text-sm">
                   Primary
                 </Label>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemovePhone(index)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {!disabled && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemovePhone(index)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
-        <Button
-          type="button"
-          variant="link"
-          onClick={onAddPhone}
-          className="flex items-center gap-2 text-blue-600 h-auto p-0"
-        >
-          <Plus className="h-4 w-4" />
-          Add phone number
-        </Button>
+        {!disabled && (
+          <Button
+            type="button"
+            variant="link"
+            onClick={onAddPhone}
+            className="flex items-center gap-2 text-blue-600 h-auto p-0"
+          >
+            <Plus className="h-4 w-4" />
+            Add phone number
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

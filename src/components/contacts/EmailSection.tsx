@@ -28,6 +28,7 @@ interface EmailSectionProps {
     field: keyof EmailEntry,
     value: string | boolean
   ) => void;
+  disabled?: boolean;
 }
 
 export default function EmailSection({
@@ -35,6 +36,7 @@ export default function EmailSection({
   onAddEmail,
   onRemoveEmail,
   onUpdateEmail,
+  disabled = false,
 }: EmailSectionProps) {
   return (
     <Card>
@@ -54,6 +56,7 @@ export default function EmailSection({
                 placeholder=""
                 type="email"
                 className="h-10"
+                disabled={disabled}
               />
             </div>
             <div className="w-24 space-y-2">
@@ -61,6 +64,7 @@ export default function EmailSection({
               <Select
                 value={email.type}
                 onValueChange={(value) => onUpdateEmail(index, "type", value)}
+                disabled={disabled}
               >
                 <SelectTrigger className="mb-0" style={{ height: "40px" }}>
                   <SelectValue />
@@ -81,32 +85,37 @@ export default function EmailSection({
                   checked={email.primary}
                   onChange={() => onUpdateEmail(index, "primary", true)}
                   className="h-3 w-3"
+                  disabled={disabled}
                 />
                 <Label htmlFor={`email-primary-${index}`} className="text-sm">
                   Primary
                 </Label>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemoveEmail(index)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {!disabled && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemoveEmail(index)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         ))}
-        <Button
-          type="button"
-          variant="link"
-          onClick={onAddEmail}
-          className="flex items-center gap-2 text-blue-600 h-auto p-0"
-        >
-          <Plus className="h-4 w-4" />
-          Add email address
-        </Button>
+        {!disabled && (
+          <Button
+            type="button"
+            variant="link"
+            onClick={onAddEmail}
+            className="flex items-center gap-2 text-blue-600 h-auto p-0"
+          >
+            <Plus className="h-4 w-4" />
+            Add email address
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

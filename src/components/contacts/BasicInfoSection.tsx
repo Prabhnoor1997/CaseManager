@@ -47,6 +47,7 @@ interface BasicInfoSectionProps {
   onCompanyNameChange: (value: string) => void;
   onTitleChange: (value: string) => void;
   onDateOfBirthChange: (date: Date | undefined) => void;
+  disabled?: boolean;
 }
 
 export default function BasicInfoSection({
@@ -65,6 +66,7 @@ export default function BasicInfoSection({
   onCompanyNameChange,
   onTitleChange,
   onDateOfBirthChange,
+  disabled = false,
 }: BasicInfoSectionProps) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
@@ -130,6 +132,7 @@ export default function BasicInfoSection({
                     onChange={(e) => onPrefixChange(e.target.value)}
                     placeholder=""
                     className="h-9"
+                    disabled={disabled}
                   />
                 </div>
                 <div className="space-y-2">
@@ -142,6 +145,7 @@ export default function BasicInfoSection({
                     onChange={(e) => onFirstNameChange(e.target.value)}
                     required
                     className="h-9"
+                    disabled={disabled}
                   />
                 </div>
                 <div className="space-y-2">
@@ -153,6 +157,7 @@ export default function BasicInfoSection({
                     value={middleName}
                     onChange={(e) => onMiddleNameChange(e.target.value)}
                     className="h-9"
+                    disabled={disabled}
                   />
                 </div>
                 <div className="space-y-2">
@@ -165,6 +170,7 @@ export default function BasicInfoSection({
                     onChange={(e) => onLastNameChange(e.target.value)}
                     required
                     className="h-9"
+                    disabled={disabled}
                   />
                 </div>
               </div>
@@ -177,7 +183,7 @@ export default function BasicInfoSection({
                   <Select
                     value={companyName || ""}
                     onValueChange={handleCompanySelect}
-                    disabled={isLoadingCompanies}
+                    disabled={isLoadingCompanies || disabled}
                   >
                     <SelectTrigger className="h-9">
                       <SelectValue
@@ -216,6 +222,7 @@ export default function BasicInfoSection({
                     onChange={(e) => onTitleChange(e.target.value)}
                     placeholder=""
                     className="h-9"
+                    disabled={disabled}
                   />
                 </div>
                 <div className="space-y-2">
@@ -228,6 +235,7 @@ export default function BasicInfoSection({
                           "h-9 w-full justify-start text-left font-normal",
                           !dateOfBirth && "text-muted-foreground"
                         )}
+                        disabled={disabled}
                       >
                         {dateOfBirth ? (
                           format(dateOfBirth, "PPP")
@@ -265,6 +273,7 @@ export default function BasicInfoSection({
                 onChange={(e) => onCompanyNameChange(e.target.value)}
                 required
                 className="h-9 max-w-md"
+                disabled={disabled}
               />
             </div>
           )}

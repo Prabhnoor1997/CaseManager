@@ -34,6 +34,7 @@ interface AddressSectionProps {
     field: keyof AddressEntry,
     value: string | boolean
   ) => void;
+  disabled?: boolean;
 }
 
 export default function AddressSection({
@@ -41,6 +42,7 @@ export default function AddressSection({
   onAddAddress,
   onRemoveAddress,
   onUpdateAddress,
+  disabled = false,
 }: AddressSectionProps) {
   return (
     <Card>
@@ -61,6 +63,7 @@ export default function AddressSection({
                   placeholder=""
                   rows={2}
                   className="mt-1"
+                  disabled={disabled}
                 />
               </div>
               <div>
@@ -72,6 +75,7 @@ export default function AddressSection({
                   }
                   placeholder=""
                   className="h-9 mt-1"
+                  disabled={disabled}
                 />
               </div>
               <div>
@@ -83,6 +87,7 @@ export default function AddressSection({
                   }
                   placeholder=""
                   className="h-9 mt-1"
+                  disabled={disabled}
                 />
               </div>
               <div>
@@ -94,6 +99,7 @@ export default function AddressSection({
                   }
                   placeholder=""
                   className="h-9 mt-1"
+                  disabled={disabled}
                 />
               </div>
               <div>
@@ -103,6 +109,7 @@ export default function AddressSection({
                   onValueChange={(value) =>
                     onUpdateAddress(index, "country", value)
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger className="h-9 mt-1">
                     <SelectValue />
@@ -123,6 +130,7 @@ export default function AddressSection({
                   onValueChange={(value) =>
                     onUpdateAddress(index, "type", value)
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger className="h-9 mt-1">
                     <SelectValue />
@@ -145,12 +153,13 @@ export default function AddressSection({
                   checked={address.primary}
                   onChange={() => onUpdateAddress(index, "primary", true)}
                   className="h-3 w-3"
+                  disabled={disabled}
                 />
                 <Label htmlFor={`address-primary-${index}`} className="text-sm">
                   Primary
                 </Label>
               </div>
-              {addresses.length > 1 && (
+              {!disabled && addresses.length > 1 && (
                 <Button
                   type="button"
                   variant="link"
@@ -164,15 +173,17 @@ export default function AddressSection({
             </div>
           </div>
         ))}
-        <Button
-          type="button"
-          variant="link"
-          onClick={onAddAddress}
-          className="flex items-center gap-2 text-blue-600 h-auto p-0"
-        >
-          <Plus className="h-4 w-4" />
-          Add address
-        </Button>
+        {!disabled && (
+          <Button
+            type="button"
+            variant="link"
+            onClick={onAddAddress}
+            className="flex items-center gap-2 text-blue-600 h-auto p-0"
+          >
+            <Plus className="h-4 w-4" />
+            Add address
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

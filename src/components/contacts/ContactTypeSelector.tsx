@@ -13,6 +13,7 @@ interface ContactTypeSelectorProps {
   onContactTypeChange: (type: "person" | "company") => void;
   profilePhoto: string;
   onProfilePhotoChange: (photoUrl: string) => void;
+  disabled?: boolean;
 }
 
 export default function ContactTypeSelector({
@@ -20,6 +21,7 @@ export default function ContactTypeSelector({
   onContactTypeChange,
   profilePhoto,
   onProfilePhotoChange,
+  disabled = false,
 }: ContactTypeSelectorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -98,9 +100,10 @@ export default function ContactTypeSelector({
               <Button
                 type="button"
                 variant={contactType === "person" ? "default" : "outline"}
-                onClick={() => onContactTypeChange("person")}
+                onClick={() => !disabled && onContactTypeChange("person")}
                 className="flex items-center gap-2"
                 size="sm"
+                disabled={disabled}
               >
                 <User className="h-4 w-4" />
                 Person
@@ -108,9 +111,10 @@ export default function ContactTypeSelector({
               <Button
                 type="button"
                 variant={contactType === "company" ? "default" : "outline"}
-                onClick={() => onContactTypeChange("company")}
+                onClick={() => !disabled && onContactTypeChange("company")}
                 className="flex items-center gap-2"
                 size="sm"
+                disabled={disabled}
               >
                 <Building className="h-4 w-4" />
                 Company
@@ -125,7 +129,11 @@ export default function ContactTypeSelector({
             </Label>
             <div className="flex flex-col items-center relative">
               <div className="relative group">
-                <Avatar className="h-16 w-16 mb-2 cursor-pointer transition-opacity group-hover:opacity-80">
+                <Avatar
+                  className={`h-16 w-16 mb-2 transition-opacity ${
+                    !disabled ? "cursor-pointer group-hover:opacity-80" : ""
+                  }`}
+                >
                   {profilePhoto && <AvatarImage src={profilePhoto} />}
                   <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
                     {profilePhoto ? (
@@ -135,7 +143,7 @@ export default function ContactTypeSelector({
                     )}
                   </AvatarFallback>
                 </Avatar>
-                {profilePhoto && (
+                {profilePhoto && !disabled && (
                   <Button
                     type="button"
                     variant="destructive"
@@ -148,22 +156,24 @@ export default function ContactTypeSelector({
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="link"
-                  className="text-blue-600 text-sm h-auto p-0 flex items-center gap-1"
-                  onClick={handleFileSelect}
-                  disabled={isUploading}
-                >
-                  <Upload className="h-3 w-3" />
-                  {isUploading
-                    ? "Uploading..."
-                    : profilePhoto
-                    ? "Change photo"
-                    : "Upload photo"}
-                </Button>
-              </div>
+              {!disabled && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-blue-600 text-sm h-auto p-0 flex items-center gap-1"
+                    onClick={handleFileSelect}
+                    disabled={isUploading}
+                  >
+                    <Upload className="h-3 w-3" />
+                    {isUploading
+                      ? "Uploading..."
+                      : profilePhoto
+                      ? "Change photo"
+                      : "Upload photo"}
+                  </Button>
+                </div>
+              )}
 
               <input
                 ref={fileInputRef}
