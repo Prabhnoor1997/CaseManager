@@ -14,22 +14,20 @@ export default function TopNav() {
   const { data: session } = useSession();
 
   return (
-    <div className="flex flex-1 items-center justify-between">
-      <div className="flex flex-1">
-        <div className="flex w-full md:ml-0">
-          <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <input
-              type="search"
-              className="block h-full w-full border-transparent py-2 pl-10 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm bg-gray-50 rounded-md"
-              placeholder="Search..."
-            />
+    <div className="flex items-center justify-between w-full">
+      <div className="flex-1 max-w-lg">
+        <div className="relative w-full text-gray-400 focus-within:text-gray-600">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
           </div>
+          <input
+            type="search"
+            className="block h-full w-full border-transparent py-2 pl-10 pr-3 text-gray-900 placeholder-gray-500 focus:border-transparent focus:outline-none focus:ring-0 sm:text-sm bg-gray-50 rounded-md"
+            placeholder="Search..."
+          />
         </div>
       </div>
-      <div className="ml-4 flex items-center space-x-4">
+      <div className="flex items-center space-x-4">
         <button
           type="button"
           className="rounded-full p-1 text-gray-400 hover:text-gray-500 focus:outline-none"
